@@ -31,7 +31,7 @@ import string
 from lxml import html
 import requests
 
-from PageRenderAPI import PageRenderAPI
+from .PageRenderAPI import PageRenderAPI
 
 class ReflectionChecker(object):
     """

@@ -28,8 +28,8 @@ import random
 
 import requests
 
-from PageRenderAPI import PageRenderAPI
-from XssMapPayloads import TRIGGER_VALUE_PLACEHOLDER, XSSMAP_PAYLOADS
+from .PageRenderAPI import PageRenderAPI
+from .XssMapPayloads import TRIGGER_VALUE_PLACEHOLDER, XSSMAP_PAYLOADS
 
 class XssScanner(object):
     """

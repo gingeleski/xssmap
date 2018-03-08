@@ -28,7 +28,7 @@ import socket
 
 import requests
 
-from XssMapSettings import PHANTOM_ADDRESS
+from .XssMapSettings import PHANTOM_ADDRESS
 
 class PageRenderAPI(object):
     """

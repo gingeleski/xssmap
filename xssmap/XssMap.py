@@ -26,11 +26,13 @@ import json
 import re
 import sys
 
-from CommandLineUtils import handle_input
-from ReflectionChecker import ReflectionChecker
-from RequestVariableProbe import RequestVariableProbe
-from XssMapObject import XssMapObject
-from XssScanner import XssScanner
+from .CommandLineUtils import handle_input
+from .ReflectionChecker import ReflectionChecker
+from .RequestVariableProbe import RequestVariableProbe
+from .XssMapObject import XssMapObject
+from .XssScanner import XssScanner
+
+__version__ = '0.2.0'
 
 # XssMap supported JSON input version
 # increment minor as we add more data, do major if we break stuff
@@ -334,9 +336,7 @@ class XssMap(object):
 
         return scan_results
 
-# Run from command line
-if __name__ == '__main__':
-
+def main():
     # Parse input parameters... if something goes awry, the method prints usage
     request_type, request_url, request_body, do_reflect, do_xss, \
             headers, cookies, output_filename = handle_input(JSON_VERSION, sys.argv)
@@ -351,3 +351,7 @@ if __name__ == '__main__':
 
     with open(output_filename, 'w') as outfile:
         json.dump(output_data, outfile)
+
+# Run from command line
+if __name__ == '__main__':
+    main()

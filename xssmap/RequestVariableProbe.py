@@ -24,7 +24,7 @@
 RequestVariableProbe.py
 """
 
-from XssMapObject import XssMapObject
+from .XssMapObject import XssMapObject
 
 class RequestVariableProbe(object):
     """
