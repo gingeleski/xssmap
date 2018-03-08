@@ -4,4 +4,3 @@ idna==2.5
 lxml==3.8.0
 requests==2.17.3
 urllib3==1.21.1
-virtualenv==15.1.0
