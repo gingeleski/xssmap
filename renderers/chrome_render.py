@@ -19,6 +19,8 @@ DEBUG = True
 
 chrome_options = webdriver.ChromeOptions()
 chrome_options.add_argument('headless')
+chrome_options.add_argument('disable-web-security')
+chrome_options.add_argument('allow-file-access-from-files')
 
 driver = webdriver.Chrome(chrome_options = chrome_options)
 
@@ -102,12 +104,56 @@ def render_page():
         # Render and manipulate the page source with Headless Chrome
         driver.get('data:text/html;charset=utf-8,' + page_source)
 
-        # TODO handle provocation of page events
         errors = []
         console_messages = []
         alerts = []
         confirms = []
         prompts = []
+
+        # Handle provocation of page events
+        if provoke_page_events:
+            print_debug('Starting page events')
+            click_elements = driver.find_elements_by_xpath('//*[@onclick]')
+            if click_elements:
+                print_debug('\t' + 'Triggering @onclick')
+                # TODO
+            contextmenu_elements = driver.find_elements_by_xpath('//*[@oncontextmenu]')
+            if contextmenu_elements:
+                print_debug('\t' + 'Triggering @oncontextmenu')
+                # TODO
+            dblclick_elements = driver.find_elements_by_xpath('//*[@ondblclick]')
+            if dblclick_elements:
+                print_debug('\t' + 'Triggering @ondblclick')
+                # TODO
+            mousedown_elements = driver.find_elements_by_xpath('//*[@onmousedown]')
+            if mousedown_elements:
+                print_debug('\t' + 'Triggering @onmousedown')
+                # TODO
+            mouseenter_elements = driver.find_elements_by_xpath('//*[@onmouseenter]')
+            if mouseenter_elements:
+                print_debug('\t' + 'Triggering @onmouseenter')
+                # TODO
+            mouseleave_elements = driver.find_elements_by_xpath('//*[@onmouseleave]')
+            if mouseleave_elements:
+                print_debug('\t' + 'Triggering @onmouseleave')
+                # TODO
+            mousemove_elements = driver.find_elements_by_xpath('//*[@onmousemove]')
+            if mousemove_elements:
+                print_debug('\t' + 'Triggering @onmousemove')
+                # TODO
+            mouseover_elements = driver.find_elements_by_xpath('//*[@onmouseover]')
+            if mouseover_elements:
+                print_debug('\t' + 'Triggering @onmouseover')
+                # TODO
+            mouseout_elements = driver.find_elements_by_xpath('//*[@onmouseout]')
+            if mouseout_elements:
+                print_debug('\t' + 'Triggering @onmouseout')
+                # TODO
+            mouseup_elements = driver.find_elements_by_xpath('//*[@onmouseup]')
+            if mouseup_elements:
+                print_debug('\t' + 'Triggering @onmouseup')
+                # TODO
+            print_debug('Finished page events')
 
         # Build object of the information we need to send back
         res = {}
