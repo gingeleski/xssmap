@@ -9,26 +9,23 @@ This script sets up a Chrome server for use by xssmap
 from base64 import b64decode
 from flask import Flask, request, url_for
 from selenium import webdriver
-from seleniumrequests import Chrome
 
 import json
+import requests
 
 HOST = '127.0.0.1'
 PORT = 5555
-PRINT_DEBUG = True
-
-print('[INFO] Starting Chrome rendering engine on ' + HOST + ':' + str(PORT) + '...')
+DEBUG = True
 
 chrome_options = webdriver.ChromeOptions()
 chrome_options.add_argument('headless')
 
-#driver = webdriver.Chrome(chrome_options = chrome_options)
-driver = Chrome(chrome_options = chrome_options)
+driver = webdriver.Chrome(chrome_options = chrome_options)
 
 app = Flask(__name__)
 
 def print_debug(string):
-    if PRINT_DEBUG:
+    if DEBUG:
         print('\t[DEBUG] ' + string)
 
 def get_string_from_base64(b64_string):
@@ -50,11 +47,13 @@ def render_page():
         method = 'GET'
         if 'method' in req_data:
             method = get_string_from_base64(req_data['method']).upper()
+            if method not in ['GET','POST','PUT','DELETE']:
+                method = 'GET'
 
         print_debug(method + ' ' + url)
 
         body = None
-        if 'body' in req_data:
+        if method != 'GET' and method != 'DELETE' and 'body' in req_data:
             body = get_string_from_base64(req_data['body'])
             print_debug('body = ' + str(body))
 
@@ -63,6 +62,7 @@ def render_page():
             headers = json.loads(get_string_from_base64(req_data['headers']))
             print_debug('Headers = ' + str(headers))
 
+        # TODO right now we assume this is a dict, but better to use the Requests CookieJar
         cookies = None
         if 'cookies' in req_data:
             cookies = json.loads(get_string_from_base64(req_data['cookies']))
@@ -71,15 +71,33 @@ def render_page():
         provoke_page_events = True
         if 'provokePageEvents' in req_data:
             provoke_page_events = req_data['provokePageEvents']
+            if provoke_page_events not in [True,False]:
+                provoke_page_events = True
 
         print_debug('Provoking page events = ' + str(provoke_page_events))
         
-        # Make the request
-        # TODO add options configured above...
-        response = driver.request(method, url)
+        # Make the request with Requests
+        if method == 'GET':
+            response = requests.get(url, headers=headers, cookies=cookies)
+        elif method == 'POST':
+            response = requests.post(url, data=body, headers=headers, cookies=cookies)
+        elif method == 'PUT':
+            response = requests.put(url, data=body, headers=headers, cookies=cookies)
+        elif method == 'DELETE':
+            response = requests.delete(url, headers=headers, cookies=cookies)
+
+        page_source = response.text
+
+        # TODO transpose applicable headers from response into Chrome
+
+        # TODO transpose applicable cookies from response into Chrome
+
+        # Render and manipulate the page source with Headless Chrome
+        driver.get("data:text/html;charset=utf-8," + page_source)
         
-        return response.content
+        return driver.page_source
 
 if __name__ == '__main__':
-    app.run(host=HOST, port=PORT, debug=True)
+    print('[INFO] Starting Chrome rendering engine on ' + HOST + ':' + str(PORT) + '...')
+    app.run(host=HOST, port=PORT, debug=DEBUG)
     driver.quit()
