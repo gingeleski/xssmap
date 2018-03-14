@@ -60,10 +60,14 @@ def render_page():
             body = get_string_from_base64(req_data['body'])
             print_debug('body = ' + str(body))
 
-        headers = None
+        headers = {}
         if 'headers' in req_data:
             headers = json.loads(get_string_from_base64(req_data['headers']))
             print_debug('Headers = ' + str(headers))
+
+        # Set close-enough user agent string
+        headers['User-Agent'] = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36\
+                                         (KHTML, like Gecko) Chrome/60.0.3112.78 Safari/537.36'
 
         # TODO right now we assume this is a dict, but better to use the Requests CookieJar
         cookies = None
