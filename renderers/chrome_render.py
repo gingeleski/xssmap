@@ -113,47 +113,68 @@ def render_page():
         # Handle provocation of page events
         if provoke_page_events:
             print_debug('Starting page events')
+            page_event_count = 0
             click_elements = driver.find_elements_by_xpath('//*[@onclick]')
             if click_elements:
                 print_debug('\t' + 'Triggering @onclick')
-                # TODO
+                for e in click_elements:
+                    # TODO
+                    page_event_count += 1
             contextmenu_elements = driver.find_elements_by_xpath('//*[@oncontextmenu]')
             if contextmenu_elements:
                 print_debug('\t' + 'Triggering @oncontextmenu')
-                # TODO
+                for e in contextmenu_elements:
+                    # TODO
+                    page_event_count += 1
             dblclick_elements = driver.find_elements_by_xpath('//*[@ondblclick]')
             if dblclick_elements:
                 print_debug('\t' + 'Triggering @ondblclick')
-                # TODO
+                for e in dblclick_elements:
+                    # TODO
+                    page_event_count += 1
             mousedown_elements = driver.find_elements_by_xpath('//*[@onmousedown]')
             if mousedown_elements:
                 print_debug('\t' + 'Triggering @onmousedown')
-                # TODO
+                for e in mousedown_elements:
+                    # TODO
+                    page_event_count += 1
             mouseenter_elements = driver.find_elements_by_xpath('//*[@onmouseenter]')
             if mouseenter_elements:
                 print_debug('\t' + 'Triggering @onmouseenter')
-                # TODO
+                for e in mouseenter_elements:
+                    # TODO
+                    page_event_count += 1
             mouseleave_elements = driver.find_elements_by_xpath('//*[@onmouseleave]')
             if mouseleave_elements:
                 print_debug('\t' + 'Triggering @onmouseleave')
-                # TODO
+                for e in mouseleave_elements:
+                    # TODO
+                    page_event_count += 1
             mousemove_elements = driver.find_elements_by_xpath('//*[@onmousemove]')
             if mousemove_elements:
                 print_debug('\t' + 'Triggering @onmousemove')
-                # TODO
+                for e in mousemove_elements:
+                    # TODO
+                    page_event_count += 1
             mouseover_elements = driver.find_elements_by_xpath('//*[@onmouseover]')
             if mouseover_elements:
                 print_debug('\t' + 'Triggering @onmouseover')
-                # TODO
+                for e in mouseover_elements:
+                    # TODO
+                    page_event_count += 1
             mouseout_elements = driver.find_elements_by_xpath('//*[@onmouseout]')
             if mouseout_elements:
                 print_debug('\t' + 'Triggering @onmouseout')
-                # TODO
+                for e in mouseout_elements:
+                    # TODO
+                    page_event_count += 1
             mouseup_elements = driver.find_elements_by_xpath('//*[@onmouseup]')
             if mouseup_elements:
                 print_debug('\t' + 'Triggering @onmouseup')
-                # TODO
-            print_debug('Finished page events')
+                for e in mouseup_elements:
+                    # TODO
+                    page_event_count += 1
+            print_debug('Finished page events (' + str(page_event_count) + ')')
 
         # Build object of the information we need to send back
         res = {}
