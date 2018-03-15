@@ -23,6 +23,7 @@ chrome_options.add_argument('disable-web-security')
 chrome_options.add_argument('allow-file-access-from-files')
 
 driver = webdriver.Chrome(chrome_options = chrome_options)
+driver.maximize_window()
 
 app = Flask(__name__)
 
@@ -35,6 +36,36 @@ def make_base64_from_string(string):
 
 def get_string_from_base64(b64_string):
     return str(b64decode(b64_string).decode('utf-8'))
+
+def get_element_size_and_location(element):
+    s_l = element.rect
+    return s_l['location']['x'], s_l['location']['y'],\
+                    s_l['size']['height'], s_l['size']['width']
+
+def get_offset_still_inside_element(element):
+    x, y, h, w = get_element_size_and_location(element)
+    # Moving towards the upper lefthand corner
+    off_x = -1 * (w/4)
+    off_y = -1 * (h/4)
+    return off_x, off_y
+
+def get_offset_outside_element(element, driver):
+    element_size_and_loc = element.rect
+    x, y, h, w = get_element_size_and_location(element)
+    browser_size = driver.get_window_size()
+    max_x = browser_size['width']
+    max_y = browser_size['height']
+    off_x = 0
+    off_y = 0
+    if (x - w) > 0:
+        off_x -= w
+    elif (y - h) > 0:
+        off_y -= h
+    elif (x + w) < max_x:
+        off_x += w
+    elif (x + h) < max_y:
+        off_y += h
+    return off_x, off_y
 
 @app.route('/', methods=['POST'])
 def render_page():
@@ -118,61 +149,80 @@ def render_page():
             if click_elements:
                 print_debug('\t' + 'Triggering @onclick')
                 for e in click_elements:
-                    # TODO
+                    ActionChains(driver).click(e).pause(1).perform()
                     page_event_count += 1
             contextmenu_elements = driver.find_elements_by_xpath('//*[@oncontextmenu]')
             if contextmenu_elements:
                 print_debug('\t' + 'Triggering @oncontextmenu')
                 for e in contextmenu_elements:
-                    # TODO
+                    ActionChains(driver).context_click(e).pause(1).perform()
                     page_event_count += 1
             dblclick_elements = driver.find_elements_by_xpath('//*[@ondblclick]')
             if dblclick_elements:
                 print_debug('\t' + 'Triggering @ondblclick')
                 for e in dblclick_elements:
-                    # TODO
+                    ActionChains(driver).double_click(e).pause(1).perform()
                     page_event_count += 1
             mousedown_elements = driver.find_elements_by_xpath('//*[@onmousedown]')
             if mousedown_elements:
                 print_debug('\t' + 'Triggering @onmousedown')
                 for e in mousedown_elements:
-                    # TODO
+                    ActionChains(driver).click(e).pause(1).perform()
                     page_event_count += 1
             mouseenter_elements = driver.find_elements_by_xpath('//*[@onmouseenter]')
             if mouseenter_elements:
                 print_debug('\t' + 'Triggering @onmouseenter')
                 for e in mouseenter_elements:
-                    # TODO
+                    ActionChains(driver).move_to_element(e).pause(1).perform()
                     page_event_count += 1
             mouseleave_elements = driver.find_elements_by_xpath('//*[@onmouseleave]')
             if mouseleave_elements:
                 print_debug('\t' + 'Triggering @onmouseleave')
                 for e in mouseleave_elements:
-                    # TODO
+                    # Move the mouse in and then out
+                    actions = ActionChains(driver).move_to_element(e).pause(1)
+                    move_x, move_y = get_offset_outside_element(e)
+                    actions.move_by_offset(move_x, move_y)
+                    actions.pause(1)
+                    actions.perform()
                     page_event_count += 1
             mousemove_elements = driver.find_elements_by_xpath('//*[@onmousemove]')
             if mousemove_elements:
                 print_debug('\t' + 'Triggering @onmousemove')
                 for e in mousemove_elements:
-                    # TODO
+                    # Move the mouse in, wait, then somewhere else in the element, wait
+                    actions = ActionChains(driver).move_to_element(e).pause(1)
+                    move_x, move_y = get_offset_still_inside_element(e)
+                    actions.move_by_offset(move_x, move_y)
+                    actions.pause(1)
+                    actions.perform()
                     page_event_count += 1
             mouseover_elements = driver.find_elements_by_xpath('//*[@onmouseover]')
             if mouseover_elements:
                 print_debug('\t' + 'Triggering @onmouseover')
                 for e in mouseover_elements:
-                    # TODO
+                    actions = ActionChains(driver).move_to_element(e).pause(1)
+                    actions.perform()
                     page_event_count += 1
             mouseout_elements = driver.find_elements_by_xpath('//*[@onmouseout]')
             if mouseout_elements:
                 print_debug('\t' + 'Triggering @onmouseout')
                 for e in mouseout_elements:
-                    # TODO
+                    # Move the mouse in, wait, then out and wait for something to happen
+                    actions = ActionChains(driver).move_to_element(e).pause(1)
+                    move_x, move_y = get_offset_outside_element(e)
+                    actions.move_by_offset(move_x, move_y)
+                    actions.pause(1)
+                    actions.perform()
                     page_event_count += 1
             mouseup_elements = driver.find_elements_by_xpath('//*[@onmouseup]')
             if mouseup_elements:
                 print_debug('\t' + 'Triggering @onmouseup')
                 for e in mouseup_elements:
-                    # TODO
+                    # Click, hold the click, then release and wait for something to happen
+                    actions = ActionChains(driver).click_and_hold(e).pause(1)
+                    actions.release().pause(1)
+                    actions.perform()
                     page_event_count += 1
             print_debug('Finished page events (' + str(page_event_count) + ')')
 
