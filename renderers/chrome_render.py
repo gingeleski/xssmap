@@ -1,16 +1,16 @@
 """
-
 chrome_render.py
 
-This script sets up a Chrome server for use by xssmap
-
+This script sets up a Chrome server for use by xssmap.
 """
 
 from base64 import b64decode, b64encode
 from flask import Flask, request, url_for
 from selenium import webdriver
+from selenium.webdriver.common.desired_capabilities import DesiredCapabilities
 
 import json
+import re
 import requests
 
 HOST = '127.0.0.1'
@@ -22,27 +22,45 @@ chrome_options.add_argument('headless')
 chrome_options.add_argument('disable-web-security')
 chrome_options.add_argument('allow-file-access-from-files')
 
-driver = webdriver.Chrome(chrome_options = chrome_options)
+desired = DesiredCapabilities.CHROME
+desired['loggingPrefs'] = { 'browser' : 'ALL' }
+
+driver = webdriver.Chrome(chrome_options = chrome_options, desired_capabilities = desired)
 driver.maximize_window()
 
 app = Flask(__name__)
 
 def print_debug(string):
+    """
+    Debug print method.
+    """
     if DEBUG:
         print('\t[DEBUG] ' + string)
 
 def make_base64_from_string(string):
+    """
+    Make Base64 from string.
+    """
     return str(b64encode(string.encode()).decode('utf-8'))
 
 def get_string_from_base64(b64_string):
+    """
+    Get string from Base64.
+    """
     return str(b64decode(b64_string).decode('utf-8'))
 
 def get_element_size_and_location(element):
+    """
+    Get element size and location.
+    """
     s_l = element.rect
     return s_l['location']['x'], s_l['location']['y'],\
                     s_l['size']['height'], s_l['size']['width']
 
 def get_offset_still_inside_element(element):
+    """
+    Get offset still inside element.
+    """
     x, y, h, w = get_element_size_and_location(element)
     # Moving towards the upper lefthand corner
     off_x = -1 * (w/4)
@@ -50,6 +68,9 @@ def get_offset_still_inside_element(element):
     return off_x, off_y
 
 def get_offset_outside_element(element, driver):
+    """
+    Get offset outside element.
+    """
     element_size_and_loc = element.rect
     x, y, h, w = get_element_size_and_location(element)
     browser_size = driver.get_window_size()
@@ -66,6 +87,15 @@ def get_offset_outside_element(element, driver):
     elif (x + h) < max_y:
         off_y += h
     return off_x, off_y
+
+def parse_message_from_console_entry(string, url=None):
+    """
+    Parse message from console entry.
+    """
+    message = re.split(r'(> )(\d+)(:)(\d+)( ")', string)[-1]
+    if url:
+        message = message.replace(url, '')
+    return message
 
 @app.route('/', methods=['POST'])
 def render_page():
@@ -118,28 +148,35 @@ def render_page():
         
         # Make the request with Requests
         if method == 'GET':
-            response = requests.get(url, headers=headers, cookies=cookies)
-        elif method == 'POST':
-            response = requests.post(url, data=body, headers=headers, cookies=cookies)
-        elif method == 'PUT':
-            response = requests.put(url, data=body, headers=headers, cookies=cookies)
-        elif method == 'DELETE':
-            response = requests.delete(url, headers=headers, cookies=cookies)
-
-        page_source = response.text
-
-        # TODO transpose applicable headers from response into Chrome
-
-        # TODO transpose applicable cookies from response into Chrome
-
-        # Render and manipulate the page source with Headless Chrome
-        driver.get('data:text/html;charset=utf-8,' + page_source)
+            driver.get(url)  # TODO set headers and cookies for this
+        else:
+            if method == 'POST':
+                response = requests.post(url, data=body, headers=headers, cookies=cookies)
+            elif method == 'PUT':
+                response = requests.put(url, data=body, headers=headers, cookies=cookies)
+            elif method == 'DELETE':
+                response = requests.delete(url, headers=headers, cookies=cookies)
+            response_html = response.text
+            # TODO transpose applicable headers and cookies from response into Chrome
+            # TODO page isn't really loading right (like no 404s on broken stuff)
+            # Render and manipulate the page source with Headless Chrome
+            driver.get('data:text/html;charset=utf-8,' + response_html)
 
         errors = []
         console_messages = []
-        alerts = []
-        confirms = []
-        prompts = []
+        popups = []
+
+        # Handle off-the-bat JavaScript popups - alert() confirm() prompt()
+        while True:
+            try:
+                a = driver.switch_to_alert()
+                popups.append(a.text)
+                a.accept()
+            except:
+                # Probably/hopefully NoAlertPresentException
+                break
+
+        # TODO what if a page event provokes another popup? Need to handle
 
         # Handle provocation of page events
         if provoke_page_events:
@@ -225,15 +262,27 @@ def render_page():
                     actions.perform()
                     page_event_count += 1
             print_debug('Finished page events (' + str(page_event_count) + ')')
+        else:
+            # Wait a couple seconds for 404 errors and what-not
+            ActionChains(driver).pause(2).perform()
+
+        # Handle JavaScript console errors and messages
+        for entry in driver.get_log('browser'):
+            message = parse_message_from_console_entry(entry['message'], url)
+            if entry['level'] == 'INFO':
+                console_messages.append(message)
+            elif entry['level'] == 'WARNING' or entry['level'] == 'SEVERE':
+                errors.append(message)
+
+        # Get the source now that everything's done and loaded
+        page_source = driver.page_source
 
         # Build object of the information we need to send back
         res = {}
         res['html'] = make_base64_from_string(page_source)
         res['errors'] = make_base64_from_string(json.dumps(errors))
         res['console_messages'] = make_base64_from_string(json.dumps(console_messages))
-        res['alerts'] = make_base64_from_string(json.dumps(alerts))
-        res['confirms'] = make_base64_from_string(json.dumps(confirms))
-        res['prompts'] = make_base64_from_string(json.dumps(prompts))
+        res['popups'] = make_base64_from_string(json.dumps(popups))
         
         return json.dumps(res)
 
